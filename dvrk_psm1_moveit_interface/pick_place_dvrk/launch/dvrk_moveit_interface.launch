@@ -1,0 +1,14 @@
+<launch>
+
+  <!-- By default, we are not in debug mode -->
+  <arg name="debug" default="false" />
+
+  <!-- GDB Debug Option -->
+  <arg unless="$(arg debug)" name="launch_prefix" value="" />
+  <arg     if="$(arg debug)" name="launch_prefix"
+     value="gdb -x $(find dvrk_psm1_moveit_config)/launch/gdb_settings.gdb --ex run --args" />
+
+  <node name="dvrk_planning" pkg="pick_place_dvrk" type="dvrk_path_planning" respawn="false" launch-prefix="$(arg launch_prefix)" output="screen">
+  </node>
+
+</launch>

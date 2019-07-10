@@ -1,0 +1,16 @@
+controller_list:
+  - name: pos_based_pos_traj_controller
+    action_ns: follow_joint_trajectory
+    type: FollowJointTrajectory
+    joints:
+     - outer_yaw
+     - outer_pitch
+     - outer_insertion
+     - outer_roll
+     - outer_wrist_pitch
+     - outer_wrist_yaw
+  - name: pos_based_pos_traj_controller_jaw
+    action_ns: follow_joint_trajectory
+    type: FollowJointTrajectory
+    joints:
+     - jaw

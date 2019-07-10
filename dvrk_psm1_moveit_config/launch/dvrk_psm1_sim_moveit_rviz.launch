@@ -1,0 +1,94 @@
+<!-- -*- mode: XML -*- -->
+
+<launch>
+
+  <arg name="arm" default="PSM1"/>
+  <arg name="config" default="$(find dvrk_config)/console-$(arg arm)_KIN_SIMULATED.json"/>
+  <arg name="model" default="$(find dvrk_model)/model/$(arg arm).urdf.xacro"/>
+
+  <!-- By default, we are not in debug mode -->
+  <arg name="debug" default="false" />
+
+  <node name="dvrk_$(arg arm)_node"
+        pkg="dvrk_robot"
+        type="dvrk_console_json"
+        args="-j $(arg config) -c crtk_alpha"/>
+
+  <group ns="dvrk/$(arg arm)">
+
+    <param name="robot_description" command="rosrun xacro xacro $(arg model) prefix:=$(arg arm)_"/>
+    <param name="use_gui" value="false"/>
+    <param name="rate" value="20"/>
+
+    <rosparam param="source_list" subst_value="True">
+      [measured_js,
+       gripper/measured_js,
+       jaw/measured_js]
+    </rosparam>
+
+    <rosparam file="$(find dvrk_psm1_moveit_config)/config/ros_controller_config.yaml" command="load"/>
+
+    <node name="joint_state_publisher"
+	  pkg="joint_state_publisher"
+	  type="joint_state_publisher"
+	  output="screen"/>
+
+    <node name="dvrk_crtk_hw"
+	  pkg="ros_control_crtk_ros_hw"
+	  type="crtk_ros_hw_controller"
+	  output="screen"/>
+
+      <node name="ros_control_controller_spawner"
+            pkg="controller_manager"
+            type="spawner"
+            respawn="false"
+            output="screen"
+            args="pos_based_pos_traj_controller" />
+
+      <node name="dvrk_crtk_hw_jaw"
+            pkg="ros_control_crtk_ros_hw_jaw"
+            type="crtk_ros_hw_controller_jaw"
+            output="screen"/>
+
+    <node name="ros_control_controller_jaw_spawner"
+	  pkg="controller_manager"
+	  type="spawner"
+	  respawn="false"
+	  output="screen"
+	  args="pos_based_pos_traj_controller_jaw" />
+
+    <node name="robot_state_publisher"
+	  pkg="robot_state_publisher"
+	  type="robot_state_publisher"
+	  output="screen"/>
+
+    <include file="$(find dvrk_psm1_moveit_config)/launch/planning_context.launch">
+      <arg name="load_robot_description" value="true"/>
+    </include>
+
+    <include file="$(find dvrk_psm1_moveit_config)/launch/move_group.launch">
+      <arg name="allow_trajectory_execution" value="true"/>
+      <arg name="fake_execution" value="false"/>
+      <arg name="info" value="true"/>
+    </include>
+
+      <include file="$(find dvrk_psm1_moveit_config)/launch/moveit_rviz.launch">
+          <arg name="config_" value="true"/>
+          <arg name="debug" value="$(arg debug)"/>
+      </include>
+
+      <node name="dvrk_planning"
+            pkg="pick_place_dvrk"
+            type="dvrk_path_planning"
+            output="screen"/>
+
+  </group>
+
+<!--  <node name="rviz"-->
+<!--	pkg="rviz" type="rviz"-->
+<!--	args="-d $(find dvrk_model)/rviz_config/$(arg arm).rviz"/>-->
+    <!-- Run Rviz and load the default config to see the state of the move_group node -->
+
+
+
+</launch>
